@@ -240,6 +240,72 @@
 
     .empty span { display: block; font-size: 2.5rem; margin-bottom: 0.75rem; }
 
+    /* Limit warning overlay */
+    #limit-warning {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      background: rgba(0,0,0,0.85);
+      z-index: 1000;
+      animation: warningIn 0.2s ease;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    @keyframes warningIn {
+      from { opacity: 0; transform: scale(1.05); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%       { transform: translateX(-12px); }
+      40%       { transform: translateX(12px); }
+      60%       { transform: translateX(-8px); }
+      80%       { transform: translateX(8px); }
+    }
+
+    #limit-warning.shake { animation: shake 0.45s ease; }
+
+    .warning-icon {
+      font-size: 6rem;
+      line-height: 1;
+      filter: drop-shadow(0 0 30px #ff1744);
+    }
+
+    .warning-title {
+      font-size: clamp(2.5rem, 10vw, 5rem);
+      font-weight: 900;
+      color: #ff1744;
+      letter-spacing: -1px;
+      text-shadow: 0 0 40px rgba(255,23,68,0.8), 0 0 80px rgba(255,23,68,0.4);
+    }
+
+    .warning-sub {
+      font-size: 1.2rem;
+      color: #ffcdd2;
+      margin-bottom: 0.5rem;
+    }
+
+    #limit-warning button {
+      margin-top: 0.5rem;
+      background: #ff1744;
+      border: none;
+      border-radius: 10px;
+      padding: 0.7rem 2rem;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    #limit-warning button:hover { opacity: 0.85; }
+
     /* Toast */
     #toast {
       position: fixed;
@@ -375,8 +441,14 @@
       render();
     }
 
+    const MAX_IDEAS = 5;
+
     function addIdea(text) {
       if (!text.trim()) return;
+      if (ideas.length >= MAX_IDEAS) {
+        showWarning();
+        return;
+      }
       const exists = ideas.some(i => i.text.toLowerCase() === text.trim().toLowerCase());
       if (exists) {
         toast('That idea is already on the list!');
@@ -385,6 +457,22 @@
       ideas.push({ id: Date.now(), text: text.trim(), votes: 0, voted: false });
       save();
       render();
+    }
+
+    function showWarning() {
+      const existing = document.getElementById('limit-warning');
+      if (existing) { existing.classList.add('shake'); setTimeout(() => existing.classList.remove('shake'), 500); return; }
+
+      const warning = document.createElement('div');
+      warning.id = 'limit-warning';
+      warning.innerHTML = `
+        <div class="warning-icon">🚨</div>
+        <div class="warning-title">MAX 5 IDEAS!</div>
+        <div class="warning-sub">Delete an idea before adding a new one.</div>
+        <button onclick="document.getElementById('limit-warning').remove()">Dismiss</button>
+      `;
+      document.body.appendChild(warning);
+      setTimeout(() => warning && warning.remove(), 4000);
     }
 
     function escHtml(str) {
